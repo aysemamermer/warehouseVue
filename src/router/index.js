@@ -1,23 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Machines from '../views/Machines.vue';
-import Equipments from '../views/Equipments.vue';
+import Machines from '@/views/Machines.vue'; // Machines sayfasının olduğu dosya
+import Equipments from '@/views/Equipments.vue'; // Equipments sayfasının olduğu dosya
 
 const routes = [
   {
     path: '/machines',
     name: 'Machines',
-    component: Machines
+    component: Machines,
   },
   {
     path: '/equipments',
     name: 'Equipments',
-    component: Equipments
-  }
+    component: Equipments,
+  },
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
-  routes
+  history: createWebHistory(),
+  routes,
 });
 
 export default router;
