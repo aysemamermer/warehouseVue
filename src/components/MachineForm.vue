@@ -1,23 +1,48 @@
 <template>
   <div v-if="visible">
-    <h2>{{ machine ? 'Edit Machine' : 'Add Machine' }}</h2>
-    <form @submit.prevent="handleSubmit">
-      <label>Name:</label>
-      <input v-model="formData.name" required>
+    <div class="spacer"></div>
 
-      <label>Inventory Number:</label>
-      <input v-model="formData.inventoryNumber" required>
+    <div class="container">
 
-      <label>Location:</label>
-      <input v-model="formData.location" required>
+      <h2>{{ machine ? 'Edit Machine' : 'Add Machine' }}</h2>
+      <form @submit.prevent="handleSubmit">
+        <div class="mb-3">
+          <label class="form-label">Name:</label>
+          <input v-model="formData.name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Inventory Number:</label>
+          <input v-model="formData.inventory_number" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Location:</label>
+          <input v-model="formData.location" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description:</label>
+          <textarea v-model="formData.description" class="form-control"></textarea>
+        </div>
 
-      <!-- New "Description" Field -->
-      <label>Description:</label>
-      <textarea v-model="formData.description"></textarea>
+        <div class="button-container">
+          <button type="submit" class="btn btn-primary">{{ machine ? 'Save Changes' : 'Add Machine' }}</button>
+          <div class="button-spacing"></div>
+          <button type="button" @click="closeForm" class="btn btn-secondary">Cancel</button>
+        </div>
+      </form>
+      <div class="spacer-form"></div>
 
-      <button type="submit">{{ machine ? 'Save Changes' : 'Add Machine' }}</button>
-      <button type="button" @click="closeForm">Cancel</button>
-    </form>
+      <div v-if="localErrorMessage" class="alert alert-danger mt-4">
+        {{ localErrorMessage }}
+      </div>
+
+      <div v-if="successModalVisible" class="modal">
+        <div class="modal-content">
+          <span class="close" @click="closeSuccessModal">&times;</span>
+          <p>{{ successMessage }}</p>
+          <button @click="closeSuccessModal" class="btn btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -26,17 +51,22 @@ import axios from 'axios';
 
 export default {
   props: {
-    machine: Object, // The machine to edit (if any)
-    visible: Boolean, // Visibility flag
+    machine: Object,
+    visible: Boolean,
+    errorMessage: String,
   },
   data() {
     return {
       formData: {
         name: '',
-        inventoryNumber: '',
+        inventory_number: '',
         location: '',
-        description: '', // New "Description" Field
+        description: '',
       },
+      machineDataList: [],
+      localErrorMessage: '',
+      successMessage: '', // Başarı mesajı değişkeni
+      successModalVisible: false, // Başarı modalını kontrol etmek için
     };
   },
   watch: {
@@ -44,19 +74,24 @@ export default {
       handler: 'populateFormData',
       immediate: true,
     },
+    errorMessage: {
+      handler: 'updateLocalErrorMessage',
+      immediate: true,
+    },
+  },
+  mounted() {
+    this.fetchMachineData();
   },
   methods: {
     populateFormData(newMachine) {
       if (newMachine) {
-        // If editing, populate form data with existing machine details
         this.formData = { ...newMachine };
       } else {
-        // If adding a new machine, reset form data
         this.formData = {
           name: '',
-          inventoryNumber: '',
+          inventory_number: '',
           location: '',
-          description: '', // Initialize the description field
+          description: '',
         };
       }
     },
@@ -67,36 +102,148 @@ export default {
         this.addMachine();
       }
     },
-    addMachine() {
-      axios.post('http://127.0.0.1:8000/api/machines/', this.formData)
-        .then(response => {
-          this.$emit('add', response.data); // Notify the parent component about the new machine
-          this.closeForm();
-          // Sayfayı yeniden yükle
-          location.reload();
-        })
-        .catch(error => {
-          console.error('API Error:', error);
-        });
+    async addMachine() {
+      try {
+        const response = await axios.post('http://127.0.0.1:8000/api/machines/', this.formData);
+        this.$emit('add', response.data);
+        this.closeForm();
+        this.fetchMachineData();
+
+        // API'den gelen success_message'i kontrol et
+        const successMessage = response.data.success_message;
+        if (successMessage) {
+          this.successMessage = successMessage;
+          this.successModalVisible = true;
+        } else {
+          this.successMessage = 'Machine added successfully!';
+          this.successModalVisible = true;
+        }
+
+      } catch (error) {
+        if (error.response && error.response.status === 400 && error.response.data) {
+          const apiErrors = error.response.data;
+          if (apiErrors.inventory_number) {
+            this.localErrorMessage = apiErrors.inventory_number[0];
+          } else {
+            this.localErrorMessage = 'Something went wrong. Please try again.';
+          }
+        } else if (error.response && error.response.status === 500) {
+          this.localErrorMessage = 'Server error. Please try again.';
+        } else {
+          this.localErrorMessage = 'Something went wrong. Please try again.';
+        }
+        console.error('API Error:', error);
+      }
     },
+
     updateMachine() {
-      axios.put(`http://127.0.0.1:8000/api/machines/${this.machine.id}/`, this.formData)
-        .then(response => {
+      axios
+        .put(`http://127.0.0.1:8000/api/machines/${this.machine.id}/`, this.formData)
+        .then((response) => {
           this.closeForm();
-          // Sayfayı yeniden yükle
-          location.reload();
+          this.fetchMachineData();
+
+          const successMessage = response.data.success_message;
+          if (successMessage) {
+            this.successMessage = successMessage;
+            this.successModalVisible = true;
+          } else {
+            this.successMessage = 'Machine updated successfully!';
+            this.successModalVisible = true;
+          }
         })
-        .catch(error => {
+        .catch((error) => {
+          if (error.response && error.response.status === 400 && error.response.data) {
+            // API'den gelen validation hatalarını işle
+            const apiErrors = error.response.data;
+            if (apiErrors.inventory_number) {
+              this.localErrorMessage = apiErrors.inventory_number[0];
+            } else {
+              this.localErrorMessage = 'Something went wrong. Please try again.';
+            }
+          } else if (error.response && error.response.status === 500) {
+            this.localErrorMessage = 'Server error. Please try again.';
+          } else {
+            this.localErrorMessage = 'Something went wrong. Please try again.';
+          }
           console.error('API Error:', error);
         });
     },
     closeForm() {
-      this.$emit('close'); // Notify the parent component to close the form
+      this.$emit('close');
+    },
+    fetchMachineData() {
+      axios
+        .get('http://127.0.0.1:8000/api/machines/')
+        .then((response) => {
+          this.machineDataList = response.data;
+        })
+        .catch((error) => {
+          console.error('API Error:', error);
+        });
+    },
+    updateLocalErrorMessage(newErrorMessage) {
+      this.localErrorMessage = newErrorMessage;
+    },
+    closeSuccessModal() {
+      this.successModalVisible = false;
     },
   },
 };
 </script>
 
 <style scoped>
-/*  component styles  */
+.spacer {
+  margin-top: 20px;
+  /* veya istediğiniz bir boşluk değeri */
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.spacer-form {
+  margin-top: 50px;
+  /* veya istediğiniz bir boşluk değeri */
+}
+
+.button-container {
+  display: flex;
+  align-items: center;
+}
+
+.button-spacing {
+  margin-right: 10px;
+  /* İhtiyacınıza göre ayarlayabilirsiniz */
+}
 </style>
