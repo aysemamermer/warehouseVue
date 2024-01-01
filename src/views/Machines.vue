@@ -3,7 +3,12 @@
       
     <div>
     <h1>Machines</h1>
+    <div class="button-container">
     <button @click="openAddForm" class="btn btn-primary">Add Machine</button>
+    <div class="button-spacing"></div>
+    <router-link to="/equipments" class="btn btn-primary">Go to Equipments</router-link>
+    </div>
+    <div class="spacer"></div>
     <div class="mb-3">
         <label class="form-label">Search:</label>
         <input v-model="searchText" class="form-control">
@@ -95,6 +100,21 @@ export default {
   mounted() {
     this.fetchMachines();
   },
+  computed : {
+  filteredMachines() {
+    const searchTextLower = this.searchText.toLowerCase().trim();
+
+    return this.machines.filter(machine => {
+      return (
+        (!searchTextLower || machine.name.toLowerCase().includes(searchTextLower)) ||
+        (!searchTextLower || machine.inventory_number.toLowerCase().includes(searchTextLower)) ||
+        (!searchTextLower || machine.location.toLowerCase().includes(searchTextLower)) ||
+        (!searchTextLower || machine.description.toLowerCase().includes(searchTextLower)) 
+       
+      );
+    });
+  }
+},
   methods: {
 
     showMachineDetails(machine) {
@@ -123,21 +143,25 @@ export default {
       this.connectedEquipments = [];
     },
 
+    async fetchMachines() {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/api/machines/', {
+      params: {
+        search: this.searchText,
+      },
+    });
+    this.machines = response.data;
+    this.filteredMachines = response.data;
+  } catch (error) {
+    console.error('API Error:', error);
+    this.errorMessage = 'An error occurred while fetching machine data.';
+  }
+},
 
-    fetchMachines() {
-      axios
-        .get('http://127.0.0.1:8000/api/machines/')
-        .then((response) => {
-          this.machines = response.data;
-          this.filteredMachines = response.data; // Filtrelenmiş listeyi başlangıçta tüm listeye ayarla
-        })
-        .catch((error) => {
-          console.error('API Error:', error);
-        });
-    },
     openAddForm() {
       this.selectedMachine = null;
       this.isFormVisible = true;
+      this.closeMachineDetailsModal()
     },
     editMachine(machine) {
       this.selectedMachine = machine;
@@ -192,33 +216,7 @@ export default {
   },
 };
 </script>
-
-
-<style scoped>
-
-.table-container {
-  max-height: 300px; /* veya istediğiniz bir yükseklik değeri */
-  overflow-y: auto;
-  border: 1px solid #ddd; 
-  border-radius: 5px; 
-  overflow: auto; 
-  padding: 10px; 
-
-}
-.spacer-containers {
-  margin-top: 40px; /* veya istediğiniz bir boşluk değeri */
-}
-.spacer {
-  margin-top: 20px; /* veya istediğiniz bir boşluk değeri */
-}
-
-.button-container {
-  display: flex;
-  align-items: center;
-}
-
-.button-spacing {
-  margin-right: 10px; /* İhtiyacınıza göre ayarlayabilirsiniz */
-}
+<style scoped lang="scss">
+@import "@/assets/styles/main.scss";
 
 </style>

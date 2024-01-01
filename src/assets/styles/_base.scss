@@ -1,4 +1,6 @@
-// _base.scss
+
+@import '_veriables.scss';
+
 
 body {
     font-family: 'Arial', sans-serif;
@@ -9,5 +11,4 @@ body {
     color: $primary-color;
   }
   
-  // ... diğer temel stiller
   

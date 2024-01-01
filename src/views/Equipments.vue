@@ -2,7 +2,13 @@
   <div class="container mt-3">
     <div>
       <h1>Equipments</h1>
+
+      <div class="button-container">
       <button @click="openAddForm" class="btn btn-primary">Add Equipment</button>
+      <div class="button-spacing"></div>
+      <router-link to="/machines" class="btn btn-primary">Go to Machines</router-link>
+    </div>
+    <div class="spacer"></div>
       <div class="mb-3">
         <label class="form-label">Search:</label>
         <input v-model="searchText" class="form-control">
@@ -25,7 +31,7 @@
               <td>{{ equipment.id }}</td>
               <td>{{ equipment.name }}</td>
               <td>{{ equipment.inventory_number }}</td>
-              <td>{{ equipment.machine ? equipment.machine.name : 'N/A' }}</td>
+              <td>{{ equipment.machine_id ? equipment.machine_id : 'N/A' }}</td>
               <td>
                 <div class="button-container">
                   <button @click="editEquipment(equipment)" class="btn btn-warning">Edit</button>
@@ -73,28 +79,38 @@ export default {
       successMessage: '',
       searchText: '',
     };
-  },
-  computed: {
-    filteredEquipments() {
-      return this.equipments.filter(equipment => 
-        equipment.name.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        equipment.inventory_number.includes(this.searchText)
-      );
-    }
-  },
+  },  
   mounted() {
     this.fetchEquipments();
   },
+  computed: {
+  filteredEquipments() {
+    const searchTextLower = this.searchText.toLowerCase().trim();
+
+    return this.equipments.filter(equipment => {
+      return (
+        (!searchTextLower || equipment.name.toLowerCase().includes(searchTextLower)) ||
+        (!searchTextLower || equipment.inventory_number.toLowerCase().includes(searchTextLower)) 
+       
+      );
+    });
+  }
+},
+
   methods: {
-    fetchEquipments() {
-      axios
-        .get('http://127.0.0.1:8000/api/equipment/')
-        .then((response) => {
-          this.equipments = response.data;
-        })
-        .catch((error) => {
-          console.error('API Error:', error);
+  async fetchEquipments() {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/equipment/', {
+          params: {
+            name: this.searchText,
+            inventory_number: this.searchText,
+          },
         });
+        this.equipments = response.data;
+      } catch (error) {
+        console.error('API Error:', error);
+        this.errorMessage = 'An error occurred while fetching equipment data.';
+      }
     },
     openAddForm() {
       this.selectedEquipment = null;
@@ -103,6 +119,7 @@ export default {
     editEquipment(equipment) {
       this.selectedEquipment = equipment;
       this.isFormVisible = true;
+      
     },
     deleteEquipment(equipmentId) {
       if (confirm('Are you sure you want to delete this equipment?')) {
@@ -124,37 +141,27 @@ export default {
     addEquipment() {
       this.successMessage = 'Equipment added successfully!';
       this.fetchEquipments();
+
     },
     updateEquipment() {
       this.successMessage = 'Equipment updated successfully!';
       this.fetchEquipments();
     },
   },
+  watch: {
+  searchText: {
+    handler: 'fetchEquipments',
+    immediate: false,
+  },
+},
+
   components: {
     EquipmentForm,
   },
 };
 </script>
 
-<style scoped>
-.spacer {
-  margin-top: 20px;
-}
+<style scoped lang="scss">
+@import "@/assets/styles/main.scss";
 
-.form-group {
-  margin-bottom: 20px;
-}
-
-.table-container {
-  margin-top: 20px;
-}
-
-.button-container {
-  display: flex;
-  align-items: center;
-}
-
-.button-spacing {
-  margin-right: 10px;
-}
 </style>

@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Machines from '@/views/Machines.vue'; // Machines sayfasının olduğu dosya
-import Equipments from '@/views/Equipments.vue'; // Equipments sayfasının olduğu dosya
+import Machines from '@/views/Machines.vue';
+import Equipments from '@/views/Equipments.vue';
 
 const routes = [
   {

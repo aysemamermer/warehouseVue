@@ -1,54 +1,38 @@
 <template>
-  <div v-if="visible">
-    <div class="spacer"></div>
-    <div class="container">
-      <h2>{{ equipment.id ? 'Edit Equipment' : 'Add Equipment' }}</h2>
-      <form @submit.prevent="handleSubmit">
-        <div class="form-group">
-          <label for="name">Name:</label>
-          <input v-model="formData.name" id="name" class="form-control" required>
-        </div>
-        <div class="form-group">
-          <label for="inventory_number">Inventory Number:</label>
-          <input v-model="formData.inventory_number" id="inventory_number" class="form-control" required>
-        </div>
-        <div class="form-group">
-          <label for="machine">Machine:</label>
-          <select v-model="formData.machine" id="machine" class="form-control">
-            <option v-for="machineOption in machineOptions" :key="machineOption.id" :value="machineOption">
-              {{ machineOption.name }}
-            </option>
-          </select>
-        </div>
-        <div class="button-container">
-          <button type="submit" class="btn btn-primary">{{ equipment.id ? 'Save Changes' : 'Add Equipment' }}</button>
-          <div class="button-spacing"></div>
-          <button type="button" @click="closeForm" class="btn btn-secondary">Cancel</button>
-        </div>
-      </form>
-      <div v-if="localErrorMessage" class="alert alert-danger mt-4">
-        {{ localErrorMessage }}
-      </div>
-    </div>
-  </div>
+<CommonForm
+        :visible="visible"
+        :formTitle="equipment ? 'Edit Equipment' : 'Add Equipment'"
+        :formFields="formFields"
+        :formButtonText="equipment ? 'Save Changes' : 'Add Equipment'"
+        :formData="formData"
+        :handleSubmit="handleSubmit"
+        :closeForm="closeForm"
+        :localErrorMessage="localErrorMessage"
+        :machineOptions="machineOptions"
+      />
 </template>
-
 <script>
+
 import axios from 'axios';
+import CommonForm from '@/components/CommonForm.vue';
 
 export default {
+  components: {
+    CommonForm,
+  },
   props: {
-    equipment: Object,
+    equipment : Object,
     visible: Boolean,
     errorMessage: String,
   },
   data() {
     return {
-      formData: {
-        name: '',
-        inventory_number: '',
-        machine: null,
-      },
+      formFields:[
+        { id: "name", label: "Name", required: true },
+        { id: "inventory_number", label: "Inventory Number", required: true },
+        { id: "machine_id", label: "Makine Id", required: true },
+      ],
+
       machineOptions: [],
       localErrorMessage: '',
     };
@@ -68,18 +52,28 @@ export default {
   },
   methods: {
     populateFormData(newEquipment) {
-      if (newEquipment) {
-        this.formData = { ...newEquipment };
-      } else {
-        this.formData = {
-          name: '',
-          inventory_number: '',
-          machine: null,
-        };
-      }
+  if (newEquipment && newEquipment.id !== null) {
+    this.formData = { ...newEquipment };
+  } else {
+    this.formData = {
+      name: '',
+      inventory_number: '',
+      machine_id: null,
+    };
+  }
+},
+fetchEquipments() {
+      axios
+        .get('http://127.0.0.1:8000/api/equipment/')
+        .then((response) => {
+          this.equipments = response.data;
+        })
+        .catch((error) => {
+          console.error('API Error:', error);
+        });
     },
     handleSubmit() {
-      if (this.equipment.id) {
+      if (this.equipment) {
         this.updateEquipment();
       } else {
         this.addEquipment();
@@ -89,32 +83,36 @@ export default {
       try {
         const response = await axios.post('http://127.0.0.1:8000/api/equipment/', this.formData);
         this.$emit('add', response.data);
-        this.closeForm();
+        window.location.reload();
       } catch (error) {
         this.handleApiError(error);
       }
+
     },
+
     updateEquipment() {
-      axios
-        .put(`http://127.0.0.1:8000/api/equipment/${this.equipment.id}/`, this.formData)
-        .then((response) => {
-          this.closeForm();
-        })
-        .catch((error) => {
-          this.handleApiError(error);
-        });
-    },
-    closeForm() {
+  axios
+    .put(`http://127.0.0.1:8000/api/equipment/${this.equipment.id}/`, this.formData)
+    .then((response) => {
       this.$emit('close');
-      this.formData = {
-        name: '',
-        inventory_number: '',
-        machine: null,
-      };
+      this.fetchEquipments();
+      this.$emit('updateEquipments'); 
+      window.location.reload();
+    })
+    .catch((error) => {
+      this.handleApiError(error);
+    });
+},
+    closeForm() {
+      this.fetchEquipments();
+      this.isFormVisible = false;
+      this.selectedMachine = null;
+      this.successMessage = '';
+      this.$emit('close');
     },
     fetchMachineOptions() {
       axios
-        .get('http://127.0.0.1:8000/api/machines/')  // Assuming there is an endpoint for fetching machines
+        .get('http://127.0.0.1:8000/api/machines/')
         .then((response) => {
           this.machineOptions = response.data;
         })
@@ -144,21 +142,8 @@ export default {
 };
 </script>
 
-<style scoped>
-.spacer {
-  margin-top: 20px;
-}
 
-.form-group {
-  margin-bottom: 20px;
-}
+<style scoped lang="scss">
+@import "@/assets/styles/main.scss";
 
-.button-container {
-  display: flex;
-  align-items: center;
-}
-
-.button-spacing {
-  margin-right: 10px;
-}
 </style>
