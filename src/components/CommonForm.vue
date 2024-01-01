@@ -7,11 +7,9 @@
         <div v-for="field in formFields" :key="field.id" class="form-group">
           <label :for="field.id">{{ field.label }}</label>
           <template v-if="field.id === 'machine_id' && machineOptions">
-            <select v-model="formData[field.id]" :id="field.id" class="form-control">
-              <option v-for="machineOption in machineOptions" :key="machineOption.id" :value="machineOption.id">
-                {{ machineOption.name }}
-              </option>
-            </select>
+            <select v-model="formData.machine_id" class="form-control">
+        <option v-for="machine in machineOptions" :key="machine.id" :value="machine.id">{{ machine.name }}</option>
+      </select>
           </template>
           <template v-else>
             <input v-model="formData[field.id]" :id="field.id" class="form-control" :required="field.required">
