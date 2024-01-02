@@ -8,8 +8,8 @@
           <label :for="field.id">{{ field.label }}</label>
           <template v-if="field.id === 'machine_id' && machineOptions">
             <select v-model="formData.machine_id" class="form-control">
-        <option v-for="machine in machineOptions" :key="machine.id" :value="machine.id">{{ machine.name }}</option>
-      </select>
+              <option v-for="machine in machineOptions" :key="machine.id" :value="machine.id">{{ machine.name }}</option>
+            </select>
           </template>
           <template v-else>
             <input v-model="formData[field.id]" :id="field.id" class="form-control" :required="field.required">
@@ -18,7 +18,7 @@
         <div class="button-container">
           <button type="submit" class="btn btn-primary">{{ formButtonText }}</button>
           <div class="button-spacing"></div>
-          <button type="button" @click="closeForm" class="btn btn-secondary">Cancel</button>
+          <button type="button" @click="closeForm" class="btn btn-primary custom-btn-grey">Cancel</button>
         </div>
         <div class="spacer-form"></div>
       </form>
@@ -40,7 +40,7 @@ export default {
     handleSubmit: Function,
     closeForm: Function,
     localErrorMessage: String,
-    machineOptions: Array, 
+    machineOptions: Array,
   },
 };
 </script>

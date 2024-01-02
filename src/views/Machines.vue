@@ -1,15 +1,21 @@
 <template>
-    <div class="container mt-3">
-      
+  <div class="container mt-3">
     <div>
-    <h1>Machines</h1>
-    <div class="button-container">
-    <button @click="openAddForm" class="btn btn-primary">Add Machine</button>
-    <div class="button-spacing"></div>
-    <router-link to="/equipments" class="btn btn-primary">Go to Equipments</router-link>
-    </div>
-    <div class="spacer"></div>
-    <div class="mb-3">
+      <h1>Machines</h1>
+      <div class="button-container">
+        <router-link to="/" class="btn btn-primary">Home</router-link>
+        <div class="button-spacing"></div>
+        <router-link to="/equipments" class="btn btn-primary">Equipments</router-link>
+
+      </div>
+      <div class="spacer"></div>
+      <div class="button-container">
+        <button @click="openAddForm" class="btn btn-primary custom-btn-green">Add Machine</button>
+        <div class="button-spacing"></div>
+
+      </div>
+      <div class="spacer"></div>
+      <div class="mb-3">
         <label class="form-label">Search:</label>
         <input v-model="searchText" class="form-control">
       </div>
@@ -36,7 +42,7 @@
               <td>
                 <div class="button-container">
                   <button @click="showMachineDetails(machine)" class="btn btn-info">Details</button>
-                <div class="button-spacing"></div>
+                  <div class="button-spacing"></div>
                   <button @click="editMachine(machine)" class="btn btn-warning">Edit</button>
                   <div class="button-spacing"></div>
                   <button @click="deleteMachine(machine.id)" class="btn btn-danger">Delete</button>
@@ -51,35 +57,24 @@
     <div v-if="errorMessage" class="alert alert-danger mt-4">
       {{ errorMessage }}
     </div>
-    <!-- Başarı Mesajı -->
     <div v-if="successMessage" class="alert alert-success mt-4">
       {{ successMessage }}
     </div>
-    <machine-form
-      :machine="selectedMachine"
-      :visible="isFormVisible"
-      @add="addMachine"
-      @update="updateMachine"
-      @close="closeForm"
-      :error-message="errorMessage"
-      :success-message="successMessage"
-    ></machine-form>
+    <CommonForm :visible="isFormVisible" :formTitle="selectedMachine ? 'Edit Machine' : 'Add Machine'"
+      :formFields="machineFormFields" :formButtonText="selectedMachine ? 'Save Changes' : 'Add Machine'"
+      :formData="formData" :handleSubmit="selectedMachine ? updateMachine : addMachine" :closeForm="closeForm"
+      :localErrorMessage="localErrorMessage" />
     <div v-if="machineDetailsModalVisible">
-      <machine-details-modal
-        :is-visible="machineDetailsModalVisible"
-        :machine-details="machineDetails"
-        :connected-equipments="connectedEquipments"
-        @close="closeMachineDetailsModal"
-      ></machine-details-modal>
+      <machine-details-modal :is-visible="machineDetailsModalVisible" :machine-details="machineDetails"
+        :connected-equipments="connectedEquipments" @close="closeMachineDetailsModal"></machine-details-modal>
     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
-import MachineForm from '@/components/MachineForm.vue';
+import CommonForm from "@/components/CommonForm.vue";
 import MachineDetailsModal from '@/components/MachineDetailsModal.vue';
-
 
 export default {
   data() {
@@ -88,116 +83,187 @@ export default {
       machineDetails: {},
       connectedEquipments: [],
       machines: [],
+      searchText: '',
       filteredMachines: [],
       isFormVisible: false,
       selectedMachine: null,
       errorMessage: '',
       successMessage: '',
-      successModalVisible: false, // Yeni eklenen başarı modalını kontrol etmek için
-      searchText: '',
+      successModalVisible: false,
+      formData: {
+        name: '',
+        inventory_number: '',
+        location: '',
+        description: '',
+      },
+      machineFormFields: [
+        { id: 'name', label: 'Name', required: true },
+        { id: 'inventory_number', label: 'Inventory Number', required: true },
+        { id: 'location', label: 'Location', required: true },
+        { id: 'description', label: 'Description', required: false },
+      ],
+      localErrorMessage: '',
     };
   },
   mounted() {
     this.fetchMachines();
   },
-  computed : {
-  filteredMachines() {
-    const searchTextLower = this.searchText.toLowerCase().trim();
+  computed: {
+    filteredMachines() {
+      const searchTextLower = this.searchText.toLowerCase().trim();
 
-    return this.machines.filter(machine => {
-      return (
-        (!searchTextLower || machine.name.toLowerCase().includes(searchTextLower)) ||
-        (!searchTextLower || machine.inventory_number.toLowerCase().includes(searchTextLower)) ||
-        (!searchTextLower || machine.location.toLowerCase().includes(searchTextLower)) ||
-        (!searchTextLower || machine.description.toLowerCase().includes(searchTextLower)) 
-       
-      );
-    });
-  }
-},
-  methods: {
-
-    showMachineDetails(machine) {
-      axios
-        .get(`http://127.0.0.1:8000/api/machines/${machine.id}/`)
-        .then((response) => {
-          this.machineDetails = response.data;
-          axios
-            .get(`http://127.0.0.1:8000/api/machines/${machine.id}/equipments/`)
-            .then((equipmentResponse) => {
-              this.connectedEquipments = equipmentResponse.data;
-              this.machineDetailsModalVisible = true;
-              this.closeForm()
-            })
-            .catch((error) => {
-              console.error('API Error:', error);
-            });
-        })
-        .catch((error) => {
-          console.error('API Error:', error);
-        });
+      return this.machines.filter((machine) => {
+        return (
+          (!searchTextLower || machine.name.toLowerCase().includes(searchTextLower)) ||
+          (!searchTextLower || machine.inventory_number.toLowerCase().includes(searchTextLower)) ||
+          (!searchTextLower || machine.location.toLowerCase().includes(searchTextLower)) ||
+          (!searchTextLower || machine.description.toLowerCase().includes(searchTextLower))
+        );
+      });
     },
+  },
+  methods: {
+    async showMachineDetails(machine) {
+      try {
+        const response = await axios.get(`http://127.0.0.1:8000/api/machines/${machine.id}/`);
+        this.machineDetails = response.data;
+
+        const equipmentResponse = await axios.get(`http://127.0.0.1:8000/api/machines/${machine.id}/equipments/`);
+        this.connectedEquipments = equipmentResponse.data;
+
+        this.machineDetailsModalVisible = true;
+        this.closeForm();
+      } catch (error) {
+        console.error('API Error:', error);
+      }
+    },
+
     closeMachineDetailsModal() {
       this.machineDetailsModalVisible = false;
       this.machineDetails = {};
       this.connectedEquipments = [];
     },
-
+    handleSearch() {
+      this.fetchMachines();
+    },
     async fetchMachines() {
-  try {
-    const response = await axios.get('http://127.0.0.1:8000/api/machines/', {
-      params: {
-        search: this.searchText,
-      },
-    });
-    this.machines = response.data;
-    this.filteredMachines = response.data;
-  } catch (error) {
-    console.error('API Error:', error);
-    this.errorMessage = 'An error occurred while fetching machine data.';
-  }
-},
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/machines/', {
+          params: {
+            search: this.searchText,
+          },
+        });
+        this.machines = response.data;
+      } catch (error) {
+        console.error('API Error:', error);
+        this.errorMessage = 'An error occurred while fetching machine data.';
+      }
+    },
 
     openAddForm() {
       this.selectedMachine = null;
       this.isFormVisible = true;
-      this.closeMachineDetailsModal()
+      this.closeMachineDetailsModal();
+      this.formData = {
+        name: '',
+        inventory_number: '',
+        location: '',
+        description: '',
+      };
     },
     editMachine(machine) {
       this.selectedMachine = machine;
       this.isFormVisible = true;
-      this.closeMachineDetailsModal() 
+      this.closeMachineDetailsModal();
+      this.formData = {
+        name: machine.name,
+        inventory_number: machine.inventory_number,
+        location: machine.location,
+        description: machine.description,
+      };
     },
-    deleteMachine(machineId) {
+    async deleteMachine(machineId) {
       if (confirm('Are you sure you want to delete this machine?')) {
-        axios
-          .delete(`http://127.0.0.1:8000/api/machines/${machineId}/delete/`)
-          .then(() => {
-            this.fetchMachines();
-            this.closeForm()
-            this.closeMachineDetailsModal() 
-
-          })
-          .catch((error) => {
-            console.error('API Error:', error);
-          });
+        try {
+          await axios.delete(`http://127.0.0.1:8000/api/machines/${machineId}/delete/`);
+          this.fetchMachines();
+          this.closeForm();
+          this.closeMachineDetailsModal();
+        } catch (error) {
+          console.error('API Error:', error);
+        }
       }
     },
     closeForm() {
       this.isFormVisible = false;
       this.selectedMachine = null;
       this.successMessage = '';
+      this.localErrorMessage = '';
+      this.formData = {
+        name: '',
+        inventory_number: '',
+        location: '',
+        description: '',
+      };
     },
-    addMachine() {
-      this.successMessage = 'Machine added successfully!';
-      this.fetchMachines();
-      this.successModalVisible = true;
+    async addMachine() {
+      try {
+        const response = await axios.post('http://127.0.0.1:8000/api/machines/', this.formData);
+
+        this.closeForm();
+        this.fetchMachines();
+
+        const successMessage = response.data.success_message;
+        if (successMessage) {
+          this.successMessage = successMessage;
+          this.successModalVisible = true;
+        } else {
+          this.successMessage = 'Machine added successfully!';
+          this.successModalVisible = true;
+        }
+      } catch (error) {
+        this.handleApiError(error);
+      }
     },
-    updateMachine() {
-      this.successMessage = 'Machine updated successfully!';
-      this.fetchMachines();
-      this.successModalVisible = true;
+
+    async updateMachine() {
+      try {
+        const response = await axios.put(`http://127.0.0.1:8000/api/machines/${this.selectedMachine.id}/`, this.formData);
+
+        this.closeForm();
+        this.fetchMachines();
+
+        const successMessage = response.data.success_message;
+        if (successMessage) {
+          this.successMessage = successMessage;
+          this.successModalVisible = true;
+        } else {
+          this.successMessage = 'Machine updated successfully!';
+          this.successModalVisible = true;
+        }
+      } catch (error) {
+        this.handleApiError(error);
+      }
     },
+
+    methods: {
+      handleApiError(error) {
+        if (error.response && error.response.status === 400 && error.response.data) {
+          const apiErrors = error.response.data;
+          if (apiErrors.inventory_number) {
+            this.localErrorMessage = apiErrors.inventory_number[0];
+          } else {
+            this.localErrorMessage = 'Something went wrong. Please try again.';
+          }
+        } else if (error.response && error.response.status === 500) {
+          this.localErrorMessage = 'Server error. Please try again.';
+        } else {
+          this.localErrorMessage = 'Something went wrong. Please try again.';
+        }
+        console.error('API Error:', error);
+      },
+    },
+
     closeSuccessModal() {
       this.successModalVisible = false;
     },
@@ -210,13 +276,12 @@ export default {
     },
   },
   components: {
-    MachineForm,
+    CommonForm,
     MachineDetailsModal,
-
   },
 };
 </script>
+
 <style scoped lang="scss">
 @import "@/assets/styles/main.scss";
-
 </style>

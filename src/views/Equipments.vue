@@ -1,10 +1,17 @@
 <template>
   <div class="container mt-3">
     <h1>Equipments</h1>
+
     <div class="button-container">
-      <button @click="openAddForm" class="btn btn-primary">Add Equipment</button>
+      <router-link to="/" class="btn btn-primary">Home</router-link>
       <div class="button-spacing"></div>
-      <router-link to="/machines" class="btn btn-primary">Go to Machines</router-link>
+      <router-link to="/machines" class="btn btn-primary">Machines</router-link>
+
+    </div>
+    <div class="spacer"></div>
+    <div class="button-container">
+      <button @click="openAddForm" class="btn btn-primary custom-btn-green">Add Equipment</button>
+      <div class="button-spacing"></div>
     </div>
     <div class="spacer"></div>
     <div class="mb-3">
@@ -19,7 +26,8 @@
             <th>ID</th>
             <th>Name</th>
             <th>Inventory Number</th>
-            <th>Machine</th>
+            <th>MachineID</th>
+            <th>Machine Name</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -29,6 +37,7 @@
             <td>{{ equipment.name }}</td>
             <td>{{ equipment.inventory_number }}</td>
             <td>{{ equipment.machine_id ? equipment.machine_id : 'N/A' }}</td>
+            <td>{{ getMachineName(equipment.machine_id) }}</td>
             <td>
               <div class="button-container">
                 <button @click="editEquipment(equipment)" class="btn btn-warning">Edit</button>
@@ -47,17 +56,17 @@
     <div v-if="successMessage" class="alert alert-success mt-4">
       {{ successMessage }}
     </div>
-    <common-form
-      :visible="isFormVisible"
+    <common-form 
+      :visible="isFormVisible" 
       :form-title="selectedEquipment ? 'Edit Equipment' : 'Add Equipment'"
-      :form-fields="formFields"
+      :form-fields="formFields" 
       :form-button-text="selectedEquipment ? 'Save Changes' : 'Add Equipment'"
-      :form-data="formData"
-      :handle-submit="handleSubmit"
-      :close-form="closeForm"
+      :form-data="formData" 
+      :handle-submit="handleSubmit" 
+      :close-form="closeForm" 
       :local-error-message="localErrorMessage"
-      :machine-options="machineOptions"
-    ></common-form>
+      :machine-options="machineOptions">
+    </common-form>
   </div>
 </template>
 
@@ -98,6 +107,10 @@ export default {
     }
   },
   methods: {
+    getMachineName(machineId) {
+      const machine = this.machineOptions.find(machine => machine.id === machineId);
+      return machine ? machine.name : 'N/A';
+    },
     async fetchEquipments() {
       try {
         const response = await axios.get('http://127.0.0.1:8000/api/equipment/', {
@@ -113,23 +126,22 @@ export default {
       }
     },
     openAddForm() {
-    this.selectedEquipment = null;
-    this.formData = {}; // Form verilerini sıfırla
-    this.isFormVisible = true;
-  },
-
-    deleteEquipment(equipmentId) {
+      this.selectedEquipment = null;
+      this.formData = {};
+      this.isFormVisible = true;
+    },
+    async deleteEquipment(equipmentId) {
       if (confirm('Are you sure you want to delete this equipment?')) {
-        axios
-          .delete(`http://127.0.0.1:8000/api/equipment/${equipmentId}/delete/`)
-          .then(() => {
-            this.fetchEquipments();
-          })
-          .catch((error) => {
-            console.error('API Error:', error);
-          });
+        try {
+          await axios.delete(`http://127.0.0.1:8000/api/equipment/${equipmentId}/delete/`);
+          this.fetchEquipments();
+          this.closeForm()
+        } catch (error) {
+          console.error('API Error:', error);
+        }
       }
     },
+
     closeForm() {
       this.isFormVisible = false;
       this.selectedEquipment = null;
@@ -143,28 +155,27 @@ export default {
       } catch (error) {
         this.handleApiError(error);
       }
-
     },
 
-    updateEquipment() {
-  axios
-    .put(`http://127.0.0.1:8000/api/equipment/${this.selectedEquipment.id}/`, this.formData)
-    .then((response) => {
-      this.successMessage = 'Equipment updated successfully!';
-      this.successModalVisible = true;
-      this.$emit('close');
-      this.fetchEquipments();
-      this.$emit('updateEquipments'); 
-    })
-    .catch((error) => {
-      this.handleApiError(error);
-    });
-},
-  editEquipment(equipment) {
-    this.selectedEquipment = { ...equipment };
-    this.formData = { ...equipment }; // Form verilerini seçilen ekipmanın bilgileriyle doldur
-    this.isFormVisible = true;
-  },
+    async updateEquipment() {
+      try {
+        const response = await axios.put(`http://127.0.0.1:8000/api/equipment/${this.selectedEquipment.id}/`, this.formData);
+
+        this.successMessage = 'Equipment updated successfully!';
+        this.successModalVisible = true;
+        this.$emit('close');
+        this.fetchEquipments();
+        this.$emit('updateEquipments');
+      } catch (error) {
+        this.handleApiError(error);
+      }
+    },
+
+    editEquipment(equipment) {
+      this.selectedEquipment = { ...equipment };
+      this.formData = { ...equipment };
+      this.isFormVisible = true;
+    },
     handleSubmit() {
       if (this.selectedEquipment) {
         this.updateEquipment();

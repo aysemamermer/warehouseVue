@@ -1,6 +1,8 @@
 <template>
   <div v-if="machineDetails">
-    <button @click="closeMachineDetailsModal" class="btn btn-secondary mt-3">Close</button>
+    <div class="spacer-form"></div>
+    <button @click="closeMachineDetailsModal" class="btn btn-primary custom-btn-grey">Close</button>
+    <div class="spacer"></div>
     <table class="table table-bordered table-striped">
       <thead class="thead-dark">
         <tr>
@@ -16,7 +18,6 @@
       </tbody>
     </table>
 
-    <!-- Bağlı ekipmanlar tablosu -->
     <table v-if="connectedEquipments.length > 0" class="table table-bordered table-striped inner-table">
       <thead class="thead-dark">
         <tr>
@@ -32,10 +33,8 @@
       </tbody>
     </table>
 
-    <!-- Bağlı ekipman yoksa bildirim -->
     <p v-else class="alert alert-info">No connected equipments.</p>
 
-    <!-- Close butonu -->
   </div>
 </template>
 
@@ -50,21 +49,12 @@ export default {
       return typeof value === "object" && !Array.isArray(value);
     },
     closeMachineDetailsModal() {
-      // Ana bileşene close olayını iletiyoruz
       this.$emit('close');
     },
   },
 };
 </script>
 
-<style scoped>
-.inner-table {
-  width: 100%;
-  margin-top: 10px;
-}
-
-/* Close butonu için stil ekleyebilirsiniz */
-.btn-secondary {
-  margin-bottom: 10px;
-}
+<style scoped lang="scss">
+@import "@/assets/styles/main.scss";
 </style>
