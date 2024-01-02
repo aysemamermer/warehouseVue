@@ -6,18 +6,22 @@
     <table class="table table-bordered table-striped">
       <thead class="thead-dark">
         <tr>
-          <th scope="col">Property</th>
-          <th scope="col">Value</th>
+          <th scope="col">Items</th>
+          <th scope="col">Values</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(value, property) in machineDetails.machine_details" :key="property">
-          <td>{{ property }}</td>
+          <td v-if="property === 'id'">Id</td>
+          <td v-if="property === 'name'">Machine Name</td>
+          <td v-if="property === 'inventory_number'">Inventory Number</td>
+          <td v-if="property === 'location'">Location</td>
+          <td v-if="property === 'description'">Description</td>
+          <td v-if="property === 'created_at'">Created At</td>
           <td>{{ value }}</td>
         </tr>
       </tbody>
     </table>
-
     <table v-if="connectedEquipments.length > 0" class="table table-bordered table-striped inner-table">
       <thead class="thead-dark">
         <tr>

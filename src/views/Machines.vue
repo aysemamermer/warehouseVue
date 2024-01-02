@@ -156,11 +156,12 @@ export default {
         this.machines = response.data;
       } catch (error) {
         console.error('API Error:', error);
-        this.errorMessage = 'An error occurred while fetching machine data.';
+        this.showErrorMessage('An error occurred while fetching machine data.')
       }
     },
 
     openAddForm() {
+      this.errorMessage = ''
       this.selectedMachine = null;
       this.isFormVisible = true;
       this.closeMachineDetailsModal();
@@ -183,17 +184,40 @@ export default {
       };
     },
     async deleteMachine(machineId) {
+  try {
+    const equipmentResponse = await axios.get(`http://127.0.0.1:8000/api/machines/${machineId}/equipments/`);
+    const connectedEquipments = equipmentResponse.data;
+
+    if (connectedEquipments.length > 0) {
+      this.showErrorMessage('This machine is associated with equipment. You cannot delete it.')
+    } else {
       if (confirm('Are you sure you want to delete this machine?')) {
-        try {
-          await axios.delete(`http://127.0.0.1:8000/api/machines/${machineId}/delete/`);
-          this.fetchMachines();
-          this.closeForm();
-          this.closeMachineDetailsModal();
-        } catch (error) {
-          console.error('API Error:', error);
-        }
+        await axios.delete(`http://127.0.0.1:8000/api/machines/${machineId}/delete/`);
+        this.fetchMachines();
+
       }
-    },
+    }
+    this.closeForm();
+    this.closeMachineDetailsModal();
+  } catch (error) {
+    console.error('API Error:', error);
+  }
+},
+
+showErrorMessage(message) {
+    this.errorMessage = message;
+    setTimeout(() => {
+      this.errorMessage = '';
+    }, 5000); 
+  },
+
+  showSuccessMessage(message) {
+    this.successMessage = message;
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 5000);
+  },
+
     closeForm() {
       this.isFormVisible = false;
       this.selectedMachine = null;
@@ -221,6 +245,7 @@ export default {
           this.successMessage = 'Machine added successfully!';
           this.successModalVisible = true;
         }
+        this.showSuccessMessage(successMessage)
       } catch (error) {
         this.handleApiError(error);
       }
@@ -241,6 +266,7 @@ export default {
           this.successMessage = 'Machine updated successfully!';
           this.successModalVisible = true;
         }
+        this.showSuccessMessage(successMessage)
       } catch (error) {
         this.handleApiError(error);
       }
@@ -251,18 +277,19 @@ export default {
         if (error.response && error.response.status === 400 && error.response.data) {
           const apiErrors = error.response.data;
           if (apiErrors.inventory_number) {
-            this.localErrorMessage = apiErrors.inventory_number[0];
+            this.showErrorMessage(apiErrors.inventory_number[0])
           } else {
-            this.localErrorMessage = 'Something went wrong. Please try again.';
+            this.showErrorMessage('Something went wrong. Please try again.')
           }
         } else if (error.response && error.response.status === 500) {
-          this.localErrorMessage = 'Server error. Please try again.';
+          this.showErrorMessage('Server error. Please try again.')
         } else {
-          this.localErrorMessage = 'Something went wrong. Please try again.';
+          this.showErrorMessage('Something went wrong. Please try again.')
         }
         console.error('API Error:', error);
       },
     },
+    
 
     closeSuccessModal() {
       this.successModalVisible = false;

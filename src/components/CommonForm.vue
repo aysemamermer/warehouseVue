@@ -22,8 +22,8 @@
         </div>
         <div class="spacer-form"></div>
       </form>
-      <div v-if="localErrorMessage" class="alert alert-danger mt-4">
-        {{ localErrorMessage }}
+      <div v-if="errorMessage" class="alert alert-danger mt-4">
+        {{ errorMessage }}
       </div>
     </div>
   </div>
@@ -39,7 +39,7 @@ export default {
     formData: Object,
     handleSubmit: Function,
     closeForm: Function,
-    localErrorMessage: String,
+    errorMessage: String,
     machineOptions: Array,
   },
 };
