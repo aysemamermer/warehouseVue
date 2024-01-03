@@ -17,7 +17,7 @@
       <div class="spacer"></div>
       <div class="mb-3">
         <label class="form-label">Search:</label>
-        <input v-model="searchText" class="form-control">
+        <input v-model="searchText" class="form-control" placeholder="Search by name, inventory number or location ">
       </div>
       <div class="spacer"></div>
       <div class="table-container">
@@ -32,6 +32,21 @@
               <th>Actions</th>
             </tr>
           </thead>
+          <!--<thead>
+          <tr>
+            <th></th>
+            <th><div class="mb-3">
+              <input v-model="nameFilter" class="form-control" placeholder="Search by name">
+            </div></th>
+            <th><div class="mb-3">
+              <input v-model="inventoryNumberFilter" class="form-control" placeholder="Search by inventory number">
+            </div></th>
+            <th><div class="mb-3">
+              <input v-model="locationFilter" class="form-control" placeholder="Search by location">
+            </div></th>
+            <th></th>
+          </tr>
+        </thead>-->
           <tbody>
             <tr v-for="machine in filteredMachines" :key="machine.id">
               <td>{{ machine.id }}</td>
@@ -63,7 +78,7 @@
     <CommonForm :visible="isFormVisible" :formTitle="selectedMachine ? 'Edit Machine' : 'Add Machine'"
       :formFields="machineFormFields" :formButtonText="selectedMachine ? 'Save Changes' : 'Add Machine'"
       :formData="formData" :handleSubmit="selectedMachine ? updateMachine : addMachine" :closeForm="closeForm"
-      :localErrorMessage="localErrorMessage" />
+       />
     <div v-if="machineDetailsModalVisible">
       <machine-details-modal :is-visible="machineDetailsModalVisible" :machine-details="machineDetails"
         :connected-equipments="connectedEquipments" @close="closeMachineDetailsModal"></machine-details-modal>
@@ -79,6 +94,10 @@ import MachineDetailsModal from '@/components/MachineDetailsModal.vue';
 export default {
   data() {
     return {
+      /*nameFilter: '',
+      inventoryNumberFilter: '',
+      locationFilter: '',
+      descriptionFilter: '',*/
       machineDetailsModalVisible: false,
       machineDetails: {},
       connectedEquipments: [],
@@ -102,13 +121,27 @@ export default {
         { id: 'location', label: 'Location', required: true },
         { id: 'description', label: 'Description', required: false },
       ],
-      localErrorMessage: '',
     };
   },
   mounted() {
     this.fetchMachines();
   },
   computed: {
+
+/*  filteredMachines() {
+      const searchTextLower = this.searchText.toLowerCase().trim();
+
+      return this.machines.filter((machine) => {
+        return (
+          (!searchTextLower || machine.name.toLowerCase().includes(searchTextLower)) &&
+          (!this.nameFilter || machine.name.toLowerCase().includes(this.nameFilter.toLowerCase())) &&
+          (!this.inventoryNumberFilter || machine.inventory_number.toLowerCase().includes(this.inventoryNumberFilter.toLowerCase())) &&
+          (!this.locationFilter || machine.location.toLowerCase().includes(this.locationFilter.toLowerCase())) &&
+        );
+      });
+    },
+  },*/
+
     filteredMachines() {
       const searchTextLower = this.searchText.toLowerCase().trim();
 
@@ -116,8 +149,7 @@ export default {
         return (
           (!searchTextLower || machine.name.toLowerCase().includes(searchTextLower)) ||
           (!searchTextLower || machine.inventory_number.toLowerCase().includes(searchTextLower)) ||
-          (!searchTextLower || machine.location.toLowerCase().includes(searchTextLower)) ||
-          (!searchTextLower || machine.description.toLowerCase().includes(searchTextLower))
+          (!searchTextLower || machine.location.toLowerCase().includes(searchTextLower))
         );
       });
     },
@@ -183,39 +215,40 @@ export default {
         description: machine.description,
       };
     },
-    async deleteMachine(machineId) {
-  try {
-    const equipmentResponse = await axios.get(`http://127.0.0.1:8000/api/machines/${machineId}/equipments/`);
-    const connectedEquipments = equipmentResponse.data;
-
-    if (connectedEquipments.length > 0) {
-      this.showErrorMessage('This machine is associated with equipment. You cannot delete it.')
-    } else {
-      if (confirm('Are you sure you want to delete this machine?')) {
-        await axios.delete(`http://127.0.0.1:8000/api/machines/${machineId}/delete/`);
-        this.fetchMachines();
-
-      }
+    
+  async deleteMachine(machineId) {
+    try {
+    if (confirm('Are you sure you want to delete this machine?')) {
+      await axios.delete(`http://127.0.0.1:8000/api/machines/${machineId}/delete/`);
+      this.fetchMachines();
     }
     this.closeForm();
     this.closeMachineDetailsModal();
   } catch (error) {
     console.error('API Error:', error);
+    if (error.response && error.response.data && error.response.data.detail) {
+      this.showErrorMessage(error.response.data.detail);
+    } else {
+      this.showErrorMessage('An error occurred while deleting the machine.');
+    }
   }
 },
 
-showErrorMessage(message) {
-    this.errorMessage = message;
+    clearMessages() {
     setTimeout(() => {
+      this.successMessage = '';
       this.errorMessage = '';
-    }, 5000); 
+    }, 5000);
+  },
+
+  showErrorMessage(message) {
+    this.errorMessage = message;
+    this.clearMessages();
   },
 
   showSuccessMessage(message) {
     this.successMessage = message;
-    setTimeout(() => {
-      this.successMessage = '';
-    }, 5000);
+    this.clearMessages();
   },
 
     closeForm() {
@@ -233,46 +266,43 @@ showErrorMessage(message) {
     async addMachine() {
       try {
         const response = await axios.post('http://127.0.0.1:8000/api/machines/', this.formData);
-
         this.closeForm();
         this.fetchMachines();
-
         const successMessage = response.data.success_message;
         if (successMessage) {
           this.successMessage = successMessage;
           this.successModalVisible = true;
         } else {
-          this.successMessage = 'Machine added successfully!';
+          this.successMessage = 'Machine added successfully! ff';
           this.successModalVisible = true;
         }
         this.showSuccessMessage(successMessage)
       } catch (error) {
+
+        this.showErrorMessage(error.response.data.detail)
         this.handleApiError(error);
       }
     },
 
     async updateMachine() {
-      try {
+    try {
         const response = await axios.put(`http://127.0.0.1:8000/api/machines/${this.selectedMachine.id}/`, this.formData);
 
         this.closeForm();
         this.fetchMachines();
-
         const successMessage = response.data.success_message;
         if (successMessage) {
-          this.successMessage = successMessage;
-          this.successModalVisible = true;
+            this.showSuccessMessage(successMessage);
         } else {
-          this.successMessage = 'Machine updated successfully!';
-          this.successModalVisible = true;
+            this.showSuccessMessage('Machine updated successfully!');
         }
-        this.showSuccessMessage(successMessage)
-      } catch (error) {
+    } catch (error) {
+        console.error('API Error:', error);
+        this.showErrorMessage(error.response.data.detail);
         this.handleApiError(error);
-      }
-    },
+    }
+},
 
-    methods: {
       handleApiError(error) {
         if (error.response && error.response.status === 400 && error.response.data) {
           const apiErrors = error.response.data;
@@ -287,9 +317,7 @@ showErrorMessage(message) {
           this.showErrorMessage('Something went wrong. Please try again.')
         }
         console.error('API Error:', error);
-      },
-    },
-    
+      }, 
 
     closeSuccessModal() {
       this.successModalVisible = false;

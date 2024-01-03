@@ -16,7 +16,7 @@
     <div class="spacer"></div>
     <div class="mb-3">
       <label class="form-label">Search:</label>
-      <input v-model="searchText" class="form-control">
+      <input v-model="searchText" class="form-control" placeholder="Search by name or inventory number">
     </div>
     <div class="spacer"></div>
     <div class="table-container">
@@ -31,6 +31,20 @@
             <th>Actions</th>
           </tr>
         </thead>
+         
+         <!--<thead>
+          <tr>
+            <th></th>
+            <th><div class="mb-3">
+              <input v-model="nameFilter" class="form-control" placeholder="Search by name">
+            </div></th>
+            <th><div class="mb-3">
+              <input v-model="inventoryNumberFilter" class="form-control" placeholder="Search by inventory number">
+            </div></th>
+            <th></th>
+            <th></th>
+          </tr>
+        </thead>-->
         <tbody>
           <tr v-for="equipment in filteredEquipments" :key="equipment.id">
             <td>{{ equipment.id }}</td>
@@ -62,7 +76,7 @@
       :form-fields="formFields" 
       :form-button-text="selectedEquipment ? 'Save Changes' : 'Add Equipment'"
       :form-data="formData" 
-      :handle-submit="handleSubmit" 
+      :handle-submit="selectedEquipment ? updateEquipment : addEquipment"
       :close-form="closeForm" 
       :errorMessage="errorMessage"
       :machine-options="machineOptions">
@@ -77,6 +91,8 @@ import CommonForm from '@/components/CommonForm.vue';
 export default {
   data() {
     return {
+      /*nameFilter: '',
+      inventoryNumberFilter: '',*/
       equipments: [],
       isFormVisible: false,
       selectedEquipment: null,
@@ -97,6 +113,7 @@ export default {
     this.fetchMachineOptions();
   },
   computed: {
+   
     filteredEquipments() {
       const searchTextLower = this.searchText.toLowerCase().trim();
       return this.equipments.filter(equipment => (
@@ -104,6 +121,19 @@ export default {
         (!searchTextLower || equipment.inventory_number.toLowerCase().includes(searchTextLower))
       ));
     }
+ /*
+    filteredEquipments() {
+      const searchTextLower = this.searchText.toLowerCase().trim();
+
+      return this.equipments.filter((equipment) => {
+        return (
+          (!searchTextLower || equipment.name.toLowerCase().includes(searchTextLower)) &&
+          (!this.nameFilter || equipment.name.toLowerCase().includes(this.nameFilter.toLowerCase())) &&
+          (!this.inventoryNumberFilter || equipment.inventory_number.toLowerCase().includes(this.inventoryNumberFilter.toLowerCase())) 
+        );
+      });
+    },
+*/
   },
   methods: {
     getMachineName(machineId) {
@@ -144,31 +174,30 @@ export default {
     closeForm() {
       this.isFormVisible = false;
       this.selectedEquipment = null;
-      this.successMessage = '';
     },
     async addEquipment() {
-      try {
-        const response = await axios.post('http://127.0.0.1:8000/api/equipment/', this.formData);
-        this.$emit('add', response.data);
-        window.location.reload();
-      } catch (error) {
-        this.handleApiError(error);
-      }
-    },
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/equipment/', this.formData);
+      this.showSuccessMessage(response.data.success_message);
+      this.fetchEquipments();
+      this.closeForm();
+    } catch (error) {
+      this.showErrorMessage(error.response.data.detail);
+      this.handleApiError(error);
+    }
+  },
 
-    async updateEquipment() {
-      try {
-        const response = await axios.put(`http://127.0.0.1:8000/api/equipment/${this.selectedEquipment.id}/`, this.formData);
-
-        this.successMessage = 'Equipment updated successfully!';
-        this.successModalVisible = true;
-        this.$emit('close');
-        this.fetchEquipments();
-        this.$emit('updateEquipments');
-      } catch (error) {
-        this.handleApiError(error);
-      }
-    },
+  async updateEquipment() {
+    try {
+      const response = await axios.put(`http://127.0.0.1:8000/api/equipment/${this.selectedEquipment.id}/`, this.formData);
+      this.showSuccessMessage(response.data.success_message);
+      this.fetchEquipments();
+      this.closeForm();
+    } catch (error) {
+      this.showErrorMessage(error.response.data.detail);
+      this.handleApiError(error);
+    }
+  },
 
     editEquipment(equipment) {
       this.selectedEquipment = { ...equipment };
@@ -206,18 +235,22 @@ export default {
         console.error('API Error:', error);
       }
     },
-    showErrorMessage(message) {
-    this.errorMessage = message;
+    
+    clearMessages() {
     setTimeout(() => {
+      this.successMessage = '';
       this.errorMessage = '';
-    }, 5000); 
+    }, 5000);
+  },
+
+  showErrorMessage(message) {
+    this.errorMessage = message;
+    this.clearMessages();
   },
 
   showSuccessMessage(message) {
     this.successMessage = message;
-    setTimeout(() => {
-      this.successMessage = '';
-    }, 5000);
+    this.clearMessages();
   },
   },
   components: {

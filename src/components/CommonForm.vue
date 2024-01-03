@@ -22,9 +22,7 @@
         </div>
         <div class="spacer-form"></div>
       </form>
-      <div v-if="errorMessage" class="alert alert-danger mt-4">
-        {{ errorMessage }}
-      </div>
+
     </div>
   </div>
 </template>
