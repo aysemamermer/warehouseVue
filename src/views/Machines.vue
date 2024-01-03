@@ -219,11 +219,14 @@ export default {
   async deleteMachine(machineId) {
     try {
     if (confirm('Are you sure you want to delete this machine?')) {
-      await axios.delete(`http://127.0.0.1:8000/api/machines/${machineId}/delete/`);
+      const response = await axios.delete(`http://127.0.0.1:8000/api/machines/${machineId}/delete/`);
       this.fetchMachines();
+      this.closeForm();
+      this.closeMachineDetailsModal();
+      if(response){
+        this.showSuccessMessage("Machine deleted!")
+      }
     }
-    this.closeForm();
-    this.closeMachineDetailsModal();
   } catch (error) {
     console.error('API Error:', error);
     if (error.response && error.response.data && error.response.data.detail) {
@@ -238,7 +241,7 @@ export default {
     setTimeout(() => {
       this.successMessage = '';
       this.errorMessage = '';
-    }, 5000);
+    }, 3000);
   },
 
   showErrorMessage(message) {

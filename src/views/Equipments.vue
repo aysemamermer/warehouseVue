@@ -136,10 +136,6 @@ export default {
 */
   },
   methods: {
-    getMachineName(machineId) {
-      const machine = this.machineOptions.find(machine => machine.id === machineId);
-      return machine ? machine.name : 'N/A';
-    },
     async fetchEquipments() {
       try {
         const response = await axios.get('http://127.0.0.1:8000/api/equipment/', {
@@ -154,63 +150,54 @@ export default {
         this.errorMessage = 'An error occurred while fetching equipment data.';
       }
     },
-    openAddForm() {
-      this.selectedEquipment = null;
-      this.formData = {};
-      this.isFormVisible = true;
-    },
+
     async deleteEquipment(equipmentId) {
       if (confirm('Are you sure you want to delete this equipment?')) {
         try {
-          await axios.delete(`http://127.0.0.1:8000/api/equipment/${equipmentId}/delete/`);
+          const response = await axios.delete(`http://127.0.0.1:8000/api/equipment/${equipmentId}/delete/`);
           this.fetchEquipments();
+          this.showSuccessMessage("Equipment deleted!")
           this.closeForm()
         } catch (error) {
           console.error('API Error:', error);
+          this.handleApiError(error);
         }
       }
     },
 
-    closeForm() {
-      this.isFormVisible = false;
-      this.selectedEquipment = null;
-    },
     async addEquipment() {
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/equipment/', this.formData);
-      this.showSuccessMessage(response.data.success_message);
-      this.fetchEquipments();
-      this.closeForm();
-    } catch (error) {
-      this.showErrorMessage(error.response.data.detail);
-      this.handleApiError(error);
-    }
-  },
+        const response = await axios.post('http://127.0.0.1:8000/api/equipment/', this.formData);
+        this.fetchEquipments();
+        this.showSuccessMessage(response.data.success_message);
 
-  async updateEquipment() {
+        this.closeForm();
+        const successMessage = response.data.message;
+
+        if (successMessage) {
+            this.successMessage = successMessage;
+            this.successModalVisible = true;
+        } else {
+        }
+    } catch (error) {
+        this.handleApiError(error);
+    }
+},
+
+async updateEquipment() {
     try {
-      const response = await axios.put(`http://127.0.0.1:8000/api/equipment/${this.selectedEquipment.id}/`, this.formData);
-      this.showSuccessMessage(response.data.success_message);
-      this.fetchEquipments();
-      this.closeForm();
+        const response = await axios.put(`http://127.0.0.1:8000/api/equipment/${this.selectedEquipment.id}/`, this.formData);
+        if (response.data.success_message) {
+            this.showSuccessMessage(response.data.success_message);
+            this.fetchEquipments();
+            this.closeForm();
+        } else {
+            console.error('Invalid response structure:', response);
+        }
     } catch (error) {
-      this.showErrorMessage(error.response.data.detail);
-      this.handleApiError(error);
+        this.handleApiError(error)
     }
-  },
-
-    editEquipment(equipment) {
-      this.selectedEquipment = { ...equipment };
-      this.formData = { ...equipment };
-      this.isFormVisible = true;
-    },
-    handleSubmit() {
-      if (this.selectedEquipment) {
-        this.updateEquipment();
-      } else {
-        this.addEquipment();
-      }
-    },
+},
 
     handleApiError(error) {
       if (error.response && error.response.status === 400 && error.response.data) {
@@ -235,23 +222,44 @@ export default {
         console.error('API Error:', error);
       }
     },
+
+    closeForm() {
+      this.isFormVisible = false;
+      this.selectedEquipment = null;
+    },
+    openAddForm() {
+      this.selectedEquipment = null;
+      this.formData = {};
+      this.isFormVisible = true;
+    },
+
+    editEquipment(equipment) {
+      this.selectedEquipment = { ...equipment };
+      this.formData = { ...equipment };
+      this.isFormVisible = true;
+    },
+
+    getMachineName(machineId) {
+      const machine = this.machineOptions.find(machine => machine.id === machineId);
+      return machine ? machine.name : 'N/A';
+    },
     
     clearMessages() {
-    setTimeout(() => {
+      setTimeout(() => {
       this.successMessage = '';
       this.errorMessage = '';
-    }, 5000);
+    }, 3000);
   },
 
-  showErrorMessage(message) {
-    this.errorMessage = message;
-    this.clearMessages();
-  },
+    showErrorMessage(message) {
+      this.errorMessage = message;
+      this.clearMessages();
+    },
 
-  showSuccessMessage(message) {
-    this.successMessage = message;
-    this.clearMessages();
-  },
+    showSuccessMessage(message) {
+      this.successMessage = message;
+      this.clearMessages();
+    },
   },
   components: {
     CommonForm,
