@@ -16,7 +16,7 @@
     <div class="spacer"></div>
     <div class="mb-3">
       <label class="form-label">Search:</label>
-      <input v-model="searchText" class="form-control" placeholder="Search by name or inventory number">
+      <input v-model="searchText" @input="handleSearch" class="form-control" placeholder="Search by name or inventory number">
     </div>
     <div class="spacer"></div>
     <div class="table-container">
@@ -31,22 +31,8 @@
             <th>Actions</th>
           </tr>
         </thead>
-         
-         <!--<thead>
-          <tr>
-            <th></th>
-            <th><div class="mb-3">
-              <input v-model="nameFilter" class="form-control" placeholder="Search by name">
-            </div></th>
-            <th><div class="mb-3">
-              <input v-model="inventoryNumberFilter" class="form-control" placeholder="Search by inventory number">
-            </div></th>
-            <th></th>
-            <th></th>
-          </tr>
-        </thead>-->
         <tbody>
-          <tr v-for="equipment in filteredEquipments" :key="equipment.id">
+          <tr v-for="equipment in equipments" :key="equipment.id">
             <td>{{ equipment.id }}</td>
             <td>{{ equipment.name }}</td>
             <td>{{ equipment.inventory_number }}</td>
@@ -91,8 +77,7 @@ import CommonForm from '@/components/CommonForm.vue';
 export default {
   data() {
     return {
-      /*nameFilter: '',
-      inventoryNumberFilter: '',*/
+
       equipments: [],
       isFormVisible: false,
       selectedEquipment: null,
@@ -109,45 +94,25 @@ export default {
     };
   },
   mounted() {
-    this.fetchEquipments();
+    this.handleSearch()
     this.fetchMachineOptions();
   },
   computed: {
-   
-    filteredEquipments() {
-      const searchTextLower = this.searchText.toLowerCase().trim();
-      return this.equipments.filter(equipment => (
-        (!searchTextLower || equipment.name.toLowerCase().includes(searchTextLower)) ||
-        (!searchTextLower || equipment.inventory_number.toLowerCase().includes(searchTextLower))
-      ));
-    }
- /*
-    filteredEquipments() {
-      const searchTextLower = this.searchText.toLowerCase().trim();
 
-      return this.equipments.filter((equipment) => {
-        return (
-          (!searchTextLower || equipment.name.toLowerCase().includes(searchTextLower)) &&
-          (!this.nameFilter || equipment.name.toLowerCase().includes(this.nameFilter.toLowerCase())) &&
-          (!this.inventoryNumberFilter || equipment.inventory_number.toLowerCase().includes(this.inventoryNumberFilter.toLowerCase())) 
-        );
-      });
-    },
-*/
   },
   methods: {
-    async fetchEquipments() {
+    
+    async handleSearch() {
       try {
         const response = await axios.get('http://127.0.0.1:8000/api/equipment/', {
           params: {
-            name: this.searchText,
-            inventory_number: this.searchText,
+            search: this.searchText,
           },
         });
         this.equipments = response.data;
       } catch (error) {
         console.error('API Error:', error);
-        this.errorMessage = 'An error occurred while fetching equipment data.zzz';
+        this.showErrorMessage('An error occurred while fetching equipment h data.');
       }
     },
 
@@ -155,7 +120,7 @@ export default {
       if (confirm('Are you sure you want to delete this equipment?')) {
         try {
           const response = await axios.delete(`http://127.0.0.1:8000/api/equipment/${equipmentId}/delete/`);
-          this.fetchEquipments();
+          this.handleSearch();
           this.showSuccessMessage("Equipment deleted!")
           this.closeForm()
         } catch (error) {
@@ -168,7 +133,7 @@ export default {
     async addEquipment() {
     try {
         const response = await axios.post('http://127.0.0.1:8000/api/equipment/', this.formData);
-        this.fetchEquipments();
+        this.handleSearch();
         this.showSuccessMessage(response.data.success_message);
 
         this.closeForm();
@@ -189,7 +154,7 @@ async updateEquipment() {
         const response = await axios.put(`http://127.0.0.1:8000/api/equipment/${this.selectedEquipment.id}/`, this.formData);
         if (response.data.success_message) {
             this.showSuccessMessage(response.data.success_message);
-            this.fetchEquipments();
+            this.handleSearch();
             this.closeForm();
         } else {
             console.error('Invalid response structure:', response);
