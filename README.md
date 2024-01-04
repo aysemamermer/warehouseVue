@@ -11,14 +11,17 @@ The project consists of the following main components:
 #Equipment Management
 
 `src/components/EquipmentManagement.vue`: Manages the CRUD operations for equipment records.
+
 `src/components/CommonForm.vue`: A reusable form component for adding and editing equipment details.
 Machine Management
 
 `src/components/MachineManagement.vue`: Handles the CRUD operations for machine records.
+
 `src/components/CommonForm.vue`: Reused form component for adding and editing machine details.
+
 `src/components/MachineDetailsModal.vue`: Displays detailed information about a specific machine, including connected equipment.
 
-#Getting Started
+# Getting Started
 
 Follow the steps below to set up and run the Vue project:
 
@@ -27,13 +30,13 @@ Make sure you have the following installed:
 
 # Installation
 
-'''
+```
 git clone https://github.com/aysemamermer/warehouseVue
-'''
+```
 
-'''
+```
 cd new-app
-'''
+```
 
 ## Project setup
 ```
