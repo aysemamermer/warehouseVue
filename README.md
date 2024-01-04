@@ -13,7 +13,7 @@ The project consists of the following main components:
 `src/views/Equipments.vue`: Manages the CRUD operations for equipment records.
 
 `src/components/CommonForm.vue`: A reusable form component for adding and editing equipment details.
-Machine Management
+# Machine Management
 
 `src/views/Machines.vue`: Handles the CRUD operations for machine records.
 
