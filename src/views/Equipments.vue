@@ -147,7 +147,7 @@ export default {
         this.equipments = response.data;
       } catch (error) {
         console.error('API Error:', error);
-        this.errorMessage = 'An error occurred while fetching equipment data.';
+        this.errorMessage = 'An error occurred while fetching equipment data.zzz';
       }
     },
 
