@@ -5,10 +5,10 @@
 
 This Vue project is designed to manage equipment and machine information. It includes features such as adding, editing, and deleting equipment and machine records. The project uses Vue.js for the front end and communicates with a backend API to handle data storage and retrieval.
 
-#Project Structure
+# Project Structure
 The project consists of the following main components:
 
-#Equipment Management
+# Equipment Management
 
 `src/components/EquipmentManagement.vue`: Manages the CRUD operations for equipment records.
 
