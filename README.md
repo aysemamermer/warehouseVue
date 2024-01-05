@@ -31,7 +31,7 @@ Make sure you have the following installed:
 # Installation
 
 ```
-git clone https://github.com/aysemamermer/warehouseVue
+git clone https://github.com/aysemamermer/warehouseVue.git
 ```
 
 ```
